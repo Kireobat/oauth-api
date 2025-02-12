@@ -1,0 +1,1 @@
+CREATE SCHEMA oauth_api;
