@@ -1,11 +1,16 @@
 package eu.kireobat.oauthapi.service
 
 import eu.kireobat.oauthapi.api.dto.CreateReactionDto
+import eu.kireobat.oauthapi.api.dto.OAuthResponseDto
 import eu.kireobat.oauthapi.api.dto.ReactionDto
 import eu.kireobat.oauthapi.persistence.entity.ReactionEntity
 import eu.kireobat.oauthapi.persistence.repo.ReactionRepo
+import org.springframework.http.HttpStatus
 import org.springframework.security.oauth2.core.user.OAuth2User
 import org.springframework.stereotype.Service
+import org.springframework.web.server.ResponseStatusException
+import java.time.ZonedDateTime
+import kotlin.jvm.optionals.getOrElse
 
 @Service
 class ReactionService(
@@ -37,5 +42,22 @@ class ReactionService(
             blog = blog.toBlogEntity(),
             reaction = createReactionDto.reaction
         )).toReactionDto()
+    }
+
+    fun removeReaction(oAuth2User: OAuth2User, reactionId: Number): OAuthResponseDto {
+
+        val user = userService.registerOrUpdateUser(oAuth2User)
+
+        val reaction = reactionRepo.findById(reactionId.toString()).getOrElse {
+            throw ResponseStatusException(HttpStatus.NOT_FOUND, "This reaction does not exist")
+        }
+
+        if (reaction.user.id != user.id) {
+            throw ResponseStatusException(HttpStatus.FORBIDDEN)
+        }
+
+        reactionRepo.deleteById(reactionId.toString())
+
+        return OAuthResponseDto(true, ZonedDateTime.now(), HttpStatus.OK, "Reaction removed successfully")
     }
 }

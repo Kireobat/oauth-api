@@ -26,12 +26,7 @@ class SecurityConfig (
                             clientRegistrationRepository: ClientRegistrationRepository): SecurityFilterChain {
         http {
             authorizeHttpRequests {
-                authorize("/swagger-ui/**", permitAll) // Allow access to all Swagger UI paths
-                authorize("/v3/api-docs/**", permitAll) // Allow access to API docs
-                authorize("/api/v1/**", permitAll)
-                authorize("/api/v1/user", authenticated)
-                authorize("/login", permitAll) // Allow access to the login endpoint
-                authorize(anyRequest, authenticated)
+                authorize(anyRequest, permitAll)
             }
             oauth2Login {
                 authorizationEndpoint {

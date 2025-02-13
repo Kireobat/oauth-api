@@ -38,7 +38,7 @@ class BlogService(
         }
 
         if (oldBlog.user.id != user.id) {
-            throw ResponseStatusException(HttpStatus.FORBIDDEN, "You are not allowed to edit this blog")
+            throw ResponseStatusException(HttpStatus.FORBIDDEN)
         }
 
         if (blogEntity.title != oldBlog.title && blogEntity.title != "") {

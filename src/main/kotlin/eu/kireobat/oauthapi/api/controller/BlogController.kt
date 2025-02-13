@@ -34,7 +34,12 @@ class BlogController(private val blogService: BlogService, private val reactionS
 
     @GetMapping("/blogs")
     fun getBlogs(@ParameterObject @PageableDefault(size = DEFAULT_PAGE_SIZE_INT, sort  = [DEFAULT_SORT_NO_DIRECTION]) pageable: Pageable): ResponseEntity<OAuthApiPageDto<BlogDto>> {
-        return ResponseEntity.ok(blogService.getBlogs(pageable))
+
+        val blogs = blogService.getBlogs(pageable)
+
+        blogs.page.onEach { blogDto -> blogDto.reactions = reactionService.getReactionsByBlogId(blogDto.id) }
+
+        return ResponseEntity.ok(blogs)
     }
 
     @PostMapping("/blog/create")
