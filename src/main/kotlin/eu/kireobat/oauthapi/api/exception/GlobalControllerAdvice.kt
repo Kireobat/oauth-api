@@ -1,16 +1,28 @@
 package eu.kireobat.oauthapi.api.exception
 
 import eu.kireobat.oauthapi.api.dto.OAuthResponseDto
+import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.media.Schema
+import io.swagger.v3.oas.annotations.responses.ApiResponse
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
+import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.server.ResponseStatusException
 import java.time.ZonedDateTime
-
-@ControllerAdvice
+@RestControllerAdvice
 class GlobalControllerAdvice {
 
+    @ApiResponse(
+        responseCode = "200-599",
+        description = "Alternative response",
+        content = [
+            Content(
+                schema = Schema(
+                    implementation = OAuthResponseDto::class
+                )
+            )
+        ])
     @ExceptionHandler(ResponseStatusException::class)
     fun handleResponseStatusException(e: ResponseStatusException): ResponseEntity<OAuthResponseDto> {
 
