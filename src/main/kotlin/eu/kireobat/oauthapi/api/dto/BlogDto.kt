@@ -6,23 +6,29 @@ import java.time.ZonedDateTime
 
 data class BlogDto (
     val id: Int,
-    val user: UserDto,
+    val createdBy: UserDto,
     val title: String?,
-    val body: String?,
+    val description: String?,
     @JsonFormat(shape= JsonFormat.Shape.STRING, pattern="yyyy-MM-dd'T'HH:mm:ss.SSSX")
     val createdTime: ZonedDateTime,
     @JsonFormat(shape= JsonFormat.Shape.STRING, pattern="yyyy-MM-dd'T'HH:mm:ss.SSSX")
-    val latestEditTime: ZonedDateTime?,
-    var reactions: List<ReactionDto>
+    val editedTime: ZonedDateTime?,
+    var reactions: List<ReactionDto>,
+    val topic: TopicDto?
 ) {
     fun toBlogEntity(): BlogEntity {
         return BlogEntity(
             id = this.id,
-            user = this.user.toUserEntity(),
+            createdBy = this.createdBy.toUserEntity(),
             title = this.title,
-            body = this.body,
+            description = this.description,
             createdTime = this.createdTime,
-            latestEditTime = this.latestEditTime
+            editedTime = this.editedTime,
+            topic = if (this.topic != null) {
+                        this.topic.toTopicEntity()
+                    } else {
+                        null
+                    }
         )
     }
 }

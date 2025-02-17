@@ -3,8 +3,11 @@ package eu.kireobat.oauthapi.service
 import eu.kireobat.oauthapi.api.dto.UserDto
 import eu.kireobat.oauthapi.persistence.entity.UserEntity
 import eu.kireobat.oauthapi.persistence.repo.UserRepo
+import org.springframework.http.HttpStatus
 import org.springframework.security.oauth2.core.user.OAuth2User
 import org.springframework.stereotype.Service
+import org.springframework.web.server.ResponseStatusException
+import kotlin.jvm.optionals.getOrElse
 
 @Service
 class UserService(
@@ -24,5 +27,9 @@ class UserService(
                 avatarUrl = avatarUrl
             ))
         }.toUserDto()
+    }
+
+    fun getUserByUsername(username: String): UserDto {
+        return userRepo.findByUsername(username).getOrElse{throw ResponseStatusException(HttpStatus.NOT_FOUND, "User not found")}.toUserDto()
     }
 }

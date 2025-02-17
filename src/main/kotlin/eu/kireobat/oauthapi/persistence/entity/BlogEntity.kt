@@ -13,26 +13,35 @@ data class BlogEntity (
     @Column(name="id")
     val id: Int = 0,
     @ManyToOne
-    @JoinColumn(name="user_id")
-    val user: UserEntity = UserEntity(),
+    @JoinColumn(name="created_by")
+    val createdBy: UserEntity = UserEntity(),
     @Column(name="title")
     var title: String? = "",
     @Column(name="description")
-    var body: String? = "",
+    var description: String? = "",
     @Column(name="created_time")
     val createdTime: ZonedDateTime = ZonedDateTime.now(),
-    @Column(name="latest_edit_time")
-    var latestEditTime: ZonedDateTime? = null,
+    @Column(name="edited_time")
+    var editedTime: ZonedDateTime? = null,
+    @ManyToOne
+    @JoinColumn(name="topic_id")
+    val topic: TopicEntity? = null,
 ) {
     fun toBlogDto(): BlogDto {
         return BlogDto(
             id = this.id,
-            user = this.user.toUserDto(),
+            createdBy = this.createdBy.toUserDto(),
             title = this.title,
-            body = this.body,
+            description = this.description,
             createdTime = this.createdTime,
-            latestEditTime = this.latestEditTime,
-            reactions = mutableListOf()
+            editedTime = this.editedTime,
+            reactions = mutableListOf(),
+            topic = if (this.topic != null) {
+                        this.topic.toTopicDto()
+                    } else {
+                        null
+                    }
+
         )
     }
 }

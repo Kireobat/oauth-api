@@ -23,6 +23,8 @@ data class UserEntity (
     val avatarUrl: String = "",
     @Column(name="registration_date")
     val registrationDate: ZonedDateTime = ZonedDateTime.now(),
+    @Column(name="edited_time")
+    val editedTime: ZonedDateTime? = null,
 ) {
     fun toUserDto(): UserDto {
         return UserDto(
@@ -31,7 +33,8 @@ data class UserEntity (
             username = this.username,
             email = this.email,
             avatarUrl = this.avatarUrl,
-            registrationDate = this.registrationDate
+            registrationDate = this.registrationDate,
+            editedTime = this.editedTime
         )
     }
 }

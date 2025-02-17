@@ -6,5 +6,7 @@ data class CreateBlogDto (
     @Schema(example = "My title", required = true)
     val title: String,
     @Schema(example = "My blog's description", required = true)
-    val description: String
+    val description: String,
+    @Schema(example = "1", required = false)
+    val topicId: Number?
 )

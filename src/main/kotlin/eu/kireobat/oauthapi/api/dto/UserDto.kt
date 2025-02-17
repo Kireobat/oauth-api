@@ -11,7 +11,9 @@ data class UserDto (
     val email: String,
     val avatarUrl: String,
     @JsonFormat(shape= JsonFormat.Shape.STRING, pattern="yyyy-MM-dd'T'HH:mm:ss.SSSX")
-    val registrationDate: ZonedDateTime
+    val registrationDate: ZonedDateTime,
+    @JsonFormat(shape= JsonFormat.Shape.STRING, pattern="yyyy-MM-dd'T'HH:mm:ss.SSSX")
+    val editedTime: ZonedDateTime?
 ) {
     fun toUserEntity(): UserEntity {
         return UserEntity(
@@ -20,7 +22,8 @@ data class UserDto (
             username = this.username,
             email = this.email,
             avatarUrl = this.avatarUrl,
-            registrationDate = this.registrationDate
+            registrationDate = this.registrationDate,
+            editedTime = this.editedTime
         )
     }
 }

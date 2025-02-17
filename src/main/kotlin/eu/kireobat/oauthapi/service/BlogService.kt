@@ -5,6 +5,7 @@ import eu.kireobat.oauthapi.api.dto.CreateBlogDto
 import eu.kireobat.oauthapi.api.dto.OAuthApiPageDto
 import eu.kireobat.oauthapi.persistence.entity.BlogEntity
 import eu.kireobat.oauthapi.persistence.repo.BlogRepo
+import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.http.HttpStatus
 import org.springframework.security.oauth2.core.user.OAuth2User
@@ -24,9 +25,9 @@ class BlogService(
         val user = userService.registerOrUpdateUser(oAuth2User)
 
         return blogRepo.save(BlogEntity(
-            user = user.toUserEntity(),
+            createdBy = user.toUserEntity(),
             title = createBlogDto.title,
-            body = createBlogDto.description,
+            description = createBlogDto.description,
         )).toBlogDto()
     }
 
@@ -37,18 +38,18 @@ class BlogService(
             throw ResponseStatusException(HttpStatus.NOT_FOUND,"Blog with id ${blogEntity.id} not found")
         }
 
-        if (oldBlog.user.id != user.id) {
+        if (oldBlog.createdBy.id != user.id) {
             throw ResponseStatusException(HttpStatus.FORBIDDEN)
         }
 
         if (blogEntity.title != oldBlog.title && blogEntity.title != "") {
             oldBlog.title = blogEntity.title
         }
-        if (blogEntity.body != oldBlog.body && blogEntity.body != "") {
-            oldBlog.body = blogEntity.body
+        if (blogEntity.description != oldBlog.description && blogEntity.description != "") {
+            oldBlog.description = blogEntity.description
         }
 
-        oldBlog.latestEditTime = ZonedDateTime.now()
+        oldBlog.editedTime = ZonedDateTime.now()
 
         blogRepo.save(oldBlog)
 
@@ -64,10 +65,41 @@ class BlogService(
         return blogDto
     }
 
-    fun getBlogs(pageable: Pageable): OAuthApiPageDto<BlogDto> {
+    fun getBlogs(pageable: Pageable, topicId: Number?, userId: Number?, searchQuery: String?): OAuthApiPageDto<BlogDto> {
+
+        val blogs: Page<BlogEntity>
+        val count: Long
+
+
+        if (topicId != null && userId != null && searchQuery != null) {
+            blogs = blogRepo.findAllByTopicIdAndCreatedByIdAndTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(pageable, topicId, userId, searchQuery, searchQuery)
+            count = blogRepo.countAllByTopicIdAndCreatedByIdAndTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(topicId, userId, searchQuery, searchQuery)
+        } else if (topicId != null && userId == null && searchQuery != null) {
+            blogs = blogRepo.findAllByTopicIdAndTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(pageable, topicId, searchQuery, searchQuery)
+            count = blogRepo.countAllByTopicIdAndTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(topicId, searchQuery, searchQuery)
+        } else if (topicId == null && userId != null && searchQuery != null) {
+            blogs = blogRepo.findAllByCreatedByIdAndTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(pageable, userId, searchQuery, searchQuery)
+            count = blogRepo.countAllByCreatedByIdAndTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(userId, searchQuery, searchQuery)
+        } else if (topicId == null && userId == null && searchQuery != null) {
+            blogs = blogRepo.findAllByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(pageable, searchQuery, searchQuery)
+            count = blogRepo.countAllByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(searchQuery, searchQuery)
+        } else if (topicId != null && userId != null) {
+            blogs = blogRepo.findAllByTopicIdAndCreatedById(pageable, topicId, userId)
+            count = blogRepo.countAllByTopicIdAndCreatedById(topicId, userId)
+        } else if (topicId != null) {
+            blogs = blogRepo.findAllByTopicId(pageable, topicId)
+            count = blogRepo.countAllByTopicId(topicId)
+        } else if (userId != null) {
+            blogs = blogRepo.findAllByCreatedById(pageable, userId)
+            count = blogRepo.countAllByCreatedById(userId)
+        } else {
+            blogs = blogRepo.findAll(pageable)
+            count = blogRepo.count()
+        }
+
         return OAuthApiPageDto(
-            blogRepo.findAll(pageable).content.map{entity -> entity.toBlogDto()},
-            blogRepo.count(),
+            blogs.content.map{entity -> entity.toBlogDto()},
+            count,
             pageable.pageNumber,
             pageable.pageSize
         )
