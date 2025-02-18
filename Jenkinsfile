@@ -13,7 +13,7 @@ pipeline {
             steps {
                 script {
                     // Checkout the code from the repository
-                    git branch: 'main', url: 'https://github.com/kireobat/oauth-api.git'
+                    git branch: 'master', url: 'https://github.com/kireobat/oauth-api.git'
                 }
             }
         }
