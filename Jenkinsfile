@@ -68,9 +68,10 @@ pipeline {
                         )
                     ]) {
                     script {
-
-                        // Helper functions
-                        def getPortainerToken(username, password) {
+                        // =============================================
+                        // Define functions as closure variables FIRST
+                        // =============================================
+                        def getPortainerToken = { username, password ->
                             def response = httpRequest(
                                 url: 'https://docker.kireobat.eu/api/auth',
                                 httpMode: 'POST',
@@ -80,35 +81,31 @@ pipeline {
                             return readJSON(text: response.content).jwt
                         }
 
-                        def findContainerByName(token, name) {
+                        def findContainerByName = { token, name ->
                             def response = httpRequest(
                                 url: "https://docker.kireobat.eu/api/endpoints/2/docker/containers/json",
                                 httpMode: 'GET',
                                 contentType: 'APPLICATION_JSON',
                                 customHeaders: [[name: 'Authorization', value: "Bearer ${token}"]]
                             )
-
                             def containers = readJSON(text: response.content)
-                            return containers.find { container ->
+                            containers.find { container ->
                                 container.Names.any { it == "/${name}" }
                             }
                         }
 
-                        def extractHostPort(container) {
+                        def extractHostPort = { container ->
                             def portBindings = container.HostConfig?.PortBindings?.'8080/tcp'
-                            return portBindings ? portBindings[0].HostPort : null
+                            portBindings ? portBindings[0].HostPort : null
                         }
 
-                        def stopAndRemoveContainer(token, containerId) {
-                            // Stop container
+                        def stopAndRemoveContainer = { token, containerId ->
                             httpRequest(
                                 url: "https://docker.kireobat.eu/api/endpoints/2/docker/containers/${containerId}/stop",
                                 httpMode: 'POST',
                                 contentType: 'APPLICATION_JSON',
                                 customHeaders: [[name: 'Authorization', value: "Bearer ${token}"]]
                             )
-
-                            // Remove container
                             httpRequest(
                                 url: "https://docker.kireobat.eu/api/endpoints/2/docker/containers/${containerId}",
                                 httpMode: 'DELETE',
@@ -118,7 +115,7 @@ pipeline {
                             )
                         }
 
-                        def createContainer(token, name, hostPort, postgresUrl, postgresUser, postgresPass, githubClient, githubSecret) {
+                        def createContainer = { token, name, hostPort, postgresUrl, postgresUser, postgresPass, githubClient, githubSecret ->
                             def encodedName = URLEncoder.encode(name, 'UTF-8')
                             def deployResponse = httpRequest(
                                 url: "https://docker.kireobat.eu/api/endpoints/2/docker/containers/create?name=${encodedName}",
@@ -141,10 +138,10 @@ pipeline {
                                     }
                                 }"""
                             )
-                            return readJSON(text: deployResponse.content).Id
+                            readJSON(text: deployResponse.content).Id
                         }
 
-                        def startContainer(token, containerId) {
+                        def startContainer = { token, containerId ->
                             httpRequest(
                                 url: "https://docker.kireobat.eu/api/endpoints/2/docker/containers/${containerId}/start",
                                 httpMode: 'POST',
@@ -153,22 +150,29 @@ pipeline {
                             )
                         }
 
-                        def token = getPortainerToken(POSTGRES_USERNAME,POSTGRES_PASSWORD)
-
-                        // Define the container name
+                        // =============================================
+                        // Main execution logic AFTER function definitions
+                        // =============================================
+                        def token = getPortainerToken(PORTAINER_USERNAME, PORTAINER_PASSWORD) // Fix credentials here
                         def containerName = "oauth-api"
                         def hostPort = null
 
                         def existingContainer = findContainerByName(token, containerName)
-
                         if (existingContainer) {
                             hostPort = extractHostPort(existingContainer)
                             stopAndRemoveContainer(token, existingContainer.id)
                         }
 
-                        def containerId = createContainer(token, containerName, hostPort,
-                            POSTGRES_URL, POSTGRES_USERNAME, POSTGRES_PASSWORD,
-                            GITHUB_CLIENT_ID, GITHUB_SECRET)
+                        def containerId = createContainer(
+                            token,
+                            containerName,
+                            hostPort,
+                            POSTGRES_URL,
+                            POSTGRES_USERNAME,
+                            POSTGRES_PASSWORD,
+                            GITHUB_CLIENT_ID,
+                            GITHUB_SECRET
+                        )
 
                         startContainer(token, containerId)
                     }
