@@ -64,39 +64,51 @@ pipeline {
                     ]) {
                     script {
                         // Obtain JWT token for Portainer API
+
+                        def authBody = JsonOutput.toJson([
+                            username: POSTGRES_USERNAME,
+                            password: PORTAINER_PASSWORD
+                        ])
+
                         def response = httpRequest(
                             url: 'https://docker.kireobat.eu/api/auth',
                             httpMode: 'POST',
                             contentType: 'APPLICATION_JSON',
-                            requestBody: '''{'username': '${PORTAINER_USERNAME}', 'password': '${PORTAINER_PASSWORD}'}'''
+                            requestBody: authBody
                         )
+
+                        echo "Auth Response: ${response.content}"
+                        echo "Auth Status: ${response.status}"
 
                         def token = readJSON(text: response.content).jwt
 
                         // Deploy the container to Portainer
+
+                        def deployBody = JsonOutput.toJson([
+                            Name: 'oauth-api',
+                            Image: 'kireobat/oauth-api:latest',
+                            Env: [
+                                SPRING_DATASOURCE_URL: POSTGRES_URL,
+                                SPRING_DATASOURCE_USER: POSTGRES_USERNAME,
+                                SPRING_DATASOURCE_PASSWORD: POSTGRES_PASSWORD
+                            ],
+                            HostConfig: {
+                                PortBindings: {
+                                    '8080/tcp' : [
+                                        {
+                                            HostPort: ''
+                                        }
+                                    ]
+                                }
+                            }
+                        ])
+
                         def deployResponse = httpRequest(
                             url: 'https://docker.kireobat.eu/api/endpoints/2/docker/containers/create',
                             httpMode: 'POST',
                             contentType: 'APPLICATION_JSON',
                             customHeaders: [[name: 'Authorization', value: 'Bearer ${token}']],
-                            requestBody: '''{
-                                'Name': 'oauth-api',
-                                'Image': 'kireobat/oauth-api:latest',
-                                'Env': [
-                                    'SPRING_DATASOURCE_URL: ${POSTGRES_URL}',
-                                    'SPRING_DATASOURCE_USER: ${POSTGRES_USERNAME}',
-                                    'SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}'
-                                ]
-                                'HostConfig': {
-                                    'PortBindings': {
-                                        '8080/tcp': [
-                                            {
-                                                'HostPort': ''
-                                            }
-                                        ]
-                                    }
-                                }
-                                }'''
+                            requestBody: deployBody
                         )
 
                         def deployResponseContent = deployResponse.content.toString()
