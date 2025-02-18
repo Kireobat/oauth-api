@@ -83,32 +83,29 @@ pipeline {
                         def token = readJSON(text: response.content).jwt
 
                         // Deploy the container to Portainer
-
-                        def deployBody = JsonOutput.toJson([
-                            Name: 'oauth-api',
-                            Image: 'kireobat/oauth-api:latest',
-                            Env: [
-                                SPRING_DATASOURCE_URL: POSTGRES_URL,
-                                SPRING_DATASOURCE_USER: POSTGRES_USERNAME,
-                                SPRING_DATASOURCE_PASSWORD: POSTGRES_PASSWORD
-                            ],
-                            HostConfig: {
-                                PortBindings: {
-                                    8080/tcp: [
-                                        {
-                                            HostPort: ''
-                                        }
-                                    ]
-                                }
-                            }
-                        ])
-
                         def deployResponse = httpRequest(
                             url: 'https://docker.kireobat.eu/api/endpoints/2/docker/containers/create',
                             httpMode: 'POST',
                             contentType: 'APPLICATION_JSON',
                             customHeaders: [[name: 'Authorization', value: 'Bearer ${token}']],
-                            requestBody: deployBody
+                            requestBody: '''{
+                                'Name': 'oauth-api',
+                                'Image': 'kireobat/oauth-api:latest',
+                                'Env': [
+                                    'SPRING_DATASOURCE_URL: ${POSTGRES_URL}',
+                                    'SPRING_DATASOURCE_USER: ${POSTGRES_USERNAME}',
+                                    'SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}'
+                                ],
+                                'HostConfig': {
+                                    'PortBindings': {
+                                        '8080/tcp': [
+                                            {
+                                                'HostPort': ''
+                                            }
+                                        ]
+                                    }
+                                }
+                                }'''
                         )
 
                         def deployResponseContent = deployResponse.content.toString()
