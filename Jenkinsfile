@@ -160,7 +160,7 @@ pipeline {
                         def existingContainer = findContainerByName(token, containerName)
                         if (existingContainer) {
                             hostPort = extractHostPort(existingContainer)
-                            stopAndRemoveContainer(token, existingContainer.id)
+                            stopAndRemoveContainer(token, existingContainer.Id)
                         }
 
                         def containerId = createContainer(
