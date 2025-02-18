@@ -26,7 +26,7 @@ class OpenApiConfig {
     fun customOpenApi(): OpenAPI {
         return OpenAPI()
             .info(Info().title("OAuth API").version("1.0"))
-            .servers(listOf(Server().url(apiPath)))
+            .servers(listOf(Server().url("$apiPath/oauth-api")))
             .addSecurityItem(SecurityRequirement().addList("github"))
             .components(
                 Components()
