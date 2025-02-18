@@ -1,12 +1,8 @@
 pipeline {
     agent {
         docker {
-            image 'docker:20.10'
+            image '3.9.9-eclipse-temurin-21-alpine'
         }
-    }
-    tools {
-        jdk 'temurin-jdk21'
-        maven 'maven3'
     }
     stages {
         stage('Checkout') {
