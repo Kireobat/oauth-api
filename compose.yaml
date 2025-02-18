@@ -3,4 +3,4 @@ services:
     build:
       context: .
     ports:
-      - "0:8080"
+      - 8080:8080
