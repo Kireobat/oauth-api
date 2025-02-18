@@ -81,6 +81,64 @@ pipeline {
 
                         def token = readJSON(text: response.content).jwt
 
+                        // Define the container name
+                        def containerName = "oauth-api"
+                        def hostPort = null // Initialize hostPort
+
+                        // Check if the container exists
+                        def existingContainerResponse = httpRequest(
+                            url: "https://docker.kireobat.eu/api/endpoints/2/docker/containers/${containerName}/json",
+                            httpMode: 'GET',
+                            contentType: 'APPLICATION_JSON',
+                            customHeaders: [[name: 'Authorization', value: "Bearer ${token}"]]
+                        )
+
+                        if (existingContainerResponse.status == 200) {
+                            // Container exists, retrieve its port configuration
+                            def existingContainer = readJSON(text: existingContainerResponse.content)
+                            def portBindings = existingContainer.HostConfig.PortBindings
+
+                            // Extract the host port from the existing container
+                            if (portBindings && portBindings['8080/tcp']) {
+                                hostPort = portBindings['8080/tcp'][0].HostPort
+                            }
+
+                            // Stop and remove the existing container
+                            def stopResponse = httpRequest(
+                                url: "https://docker.kireobat.eu/api/endpoints/2/docker/containers/${containerName}/stop",
+                                httpMode: 'POST',
+                                contentType: 'APPLICATION_JSON',
+                                customHeaders: [[name: 'Authorization', value: "Bearer ${token}"]]
+                            )
+
+                            // Check if the stop was successful
+                            if (stopResponse.status != 204) {
+                                echo "Failed to stop the container: ${stopResponse.content}"
+                            } else {
+                                echo "Container stopped successfully."
+                            }
+
+                            // Remove the existing container
+                            def removeResponse = httpRequest(
+                                url: "https://docker.kireobat.eu/api/endpoints/2/docker/containers/${containerName}",
+                                httpMode: 'DELETE',
+                                contentType: 'APPLICATION_JSON',
+                                customHeaders: [[name: 'Authorization', value: "Bearer ${token}"]],
+                                requestBody: """{
+                                    "force": true
+                                }"""
+                            )
+
+                            // Check if the remove was successful
+                            if (removeResponse.status != 204) {
+                                echo "Failed to remove the container: ${removeResponse.content}"
+                            } else {
+                                echo "Container removed successfully."
+                            }
+                        } else {
+                            echo "No existing container found with the name ${containerName}. Proceeding to create a new one with a random port."
+                        }
+
                         // Deploy the container to Portainer
                         def deployResponse = httpRequest(
                             url: 'https://docker.kireobat.eu/api/endpoints/2/docker/containers/create',
@@ -88,7 +146,7 @@ pipeline {
                             contentType: 'APPLICATION_JSON',
                             customHeaders: [[name: 'Authorization', value: "Bearer ${token}"]],
                             requestBody: """{
-                                "Name": "oauth-api",
+                                "Name": "${containerName}",
                                 "Image": "kireobat/oauth-api:latest",
                                 "Env": [
                                     "SPRING_DATASOURCE_URL=${POSTGRES_URL}/${POSTGRES_USERNAME}",
@@ -99,9 +157,9 @@ pipeline {
                                 ],
                                 "HostConfig": {
                                     "PortBindings": {
-                                        "8080/tcp": [
+                                        "${hostPort ? '8080/tcp': '8080/tcp'}": [
                                             {
-                                                "HostPort": ""
+                                                "HostPort": "${hostPort ?: ''}"
                                             }
                                         ]
                                     }

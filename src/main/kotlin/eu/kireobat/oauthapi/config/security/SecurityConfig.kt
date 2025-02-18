@@ -1,6 +1,7 @@
 package eu.kireobat.oauthapi.config.security
 
 import eu.kireobat.oauthapi.service.CustomOAuth2UserService
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
@@ -20,6 +21,11 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 class SecurityConfig (
     private val customOAuth2UserService: CustomOAuth2UserService
 ) {
+
+    @Value("\${environment.frontend.path}")
+    lateinit var frontendPath: String
+    @Value("\${environment.api.path}")
+    lateinit var apiPath: String
 
     @Bean
     fun securityFilterChain(http: HttpSecurity,
@@ -51,7 +57,7 @@ class SecurityConfig (
                 sessionCreationPolicy = SessionCreationPolicy.ALWAYS // Force session creation
             }
             logout {
-                logoutSuccessUrl = "http://localhost:5173"
+                logoutSuccessUrl = frontendPath
                 deleteCookies("JSESSIONID")
                 invalidateHttpSession = true
             }
@@ -64,7 +70,7 @@ class SecurityConfig (
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {
         val config = CorsConfiguration().apply {
-            allowedOrigins = listOf("http://localhost:8080", "http://localhost:5173", "https://github.com", "https://oauth-api.kireobat.eu")
+            allowedOrigins = listOf(apiPath, frontendPath, "https://github.com")
             allowedMethods = listOf("*")
             allowedHeaders = listOf("*")
             allowCredentials = true

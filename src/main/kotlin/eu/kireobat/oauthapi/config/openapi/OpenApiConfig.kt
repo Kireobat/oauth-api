@@ -11,10 +11,14 @@ import io.swagger.v3.oas.models.security.SecurityScheme
 import io.swagger.v3.oas.models.security.OAuthFlow
 import io.swagger.v3.oas.models.security.OAuthFlows
 import io.swagger.v3.oas.models.security.Scopes
+import org.springframework.beans.factory.annotation.Value
 
 @Configuration
 @EnableWebMvc
 class OpenApiConfig {
+
+    @Value("\${environment.api.path}")
+    lateinit var apiPath: String
 
     @Bean
     fun customOpenApi(): OpenAPI {
@@ -29,7 +33,7 @@ class OpenApiConfig {
                         OAuthFlows()
                             .authorizationCode(
                                 OAuthFlow()
-                                    .authorizationUrl("/oauth-api/oauth2/authorization/github?preferredRedirect=http://localhost:8080/oauth-api/swagger-ui/index.html")
+                                    .authorizationUrl("/oauth-api/oauth2/authorization/github?preferredRedirect=${apiPath}/oauth-api/swagger-ui/index.html")
                                     .tokenUrl("https://github.com/login/oauth/access_token")
                                     .scopes(
                                         Scopes()

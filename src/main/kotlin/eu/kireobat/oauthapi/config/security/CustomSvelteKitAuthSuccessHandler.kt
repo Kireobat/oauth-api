@@ -4,11 +4,17 @@ import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.json.JSONObject
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.core.Authentication
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler
 import java.util.*
 
 class CustomSvelteKitAuthSuccessHandler: SimpleUrlAuthenticationSuccessHandler() {
+
+    @Value("\${environment.frontend.path}")
+    lateinit var frontendPath: String
+    @Value("\${environment.api.path}")
+    lateinit var apiPath: String
 
     override fun determineTargetUrl(
         request: HttpServletRequest,
@@ -16,11 +22,11 @@ class CustomSvelteKitAuthSuccessHandler: SimpleUrlAuthenticationSuccessHandler()
         authentication: Authentication
     ): String {
         try {
-            val originalState = request.session.getAttribute("preferredRedirect") ?: return "http://localhost:5173/"
+            val originalState = request.session.getAttribute("preferredRedirect") ?: return frontendPath
 
             originalState as String
 
-            if (originalState == "http://localhost:8080/oauth-api/swagger-ui/index.html") {
+            if (originalState == "${apiPath}/oauth-api/swagger-ui/index.html") {
                 return originalState
             }
 
@@ -34,16 +40,16 @@ class CustomSvelteKitAuthSuccessHandler: SimpleUrlAuthenticationSuccessHandler()
             return validateRedirectUri(decodedState.getString("redirectUri"))
         } catch (e: IllegalArgumentException) {
             logger.error("Unable to decode stateParam: ${request.getParameter("state")} Error message: ${e.message}")
-            return "http://localhost:5173?error=invalid_state"
+            return "${frontendPath}?error=invalid_state"
         }
     }
 
     private fun validateRedirectUri(uri: String): String {
-        return if (uri.startsWith("http://localhost:5173") || uri.startsWith("https://kireobat.eu")) {
+        return if (uri.startsWith(frontendPath)) {
             uri
         } else {
             logger.warn("Unauthorized redirect uri: $uri")
-            "http://localhost:5173?error=invalid_redirect"
+            "${frontendPath}?error=invalid_redirect"
         }
     }
 }
