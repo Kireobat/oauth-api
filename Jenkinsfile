@@ -83,120 +83,20 @@ pipeline {
 
                         // Define the container name
                         def containerName = "oauth-api"
-                        def hostPort = null // Initialize hostPort
+                        def hostPort = null
 
-                        try {
-                            // Check if the container exists
-                            def existingContainerResponse = httpRequest(
-                                url: "https://docker.kireobat.eu/api/endpoints/2/docker/containers/${containerName}/json",
-                                httpMode: 'GET',
-                                contentType: 'APPLICATION_JSON',
-                                customHeaders: [[name: 'Authorization', value: "Bearer ${token}"]]
-                            )
+                        def existingContainer = findContainerByName(token, containerName)
 
-                            if (existingContainerResponse.status == 200) {
-                                // Container exists, retrieve its port configuration
-                                def existingContainer = readJSON(text: existingContainerResponse.content)
-                                def portBindings = existingContainer.HostConfig.PortBindings
-
-                                // Extract the host port from the existing container
-                                if (portBindings && portBindings['8080/tcp']) {
-                                    hostPort = portBindings['8080/tcp'][0].HostPort
-                                }
-
-                                // Stop and remove the existing container
-                                def stopResponse = httpRequest(
-                                    url: "https://docker.kireobat.eu/api/endpoints/2/docker/containers/${containerName}/stop",
-                                    httpMode: 'POST',
-                                    contentType: 'APPLICATION_JSON',
-                                    customHeaders: [[name: 'Authorization', value: "Bearer ${token}"]]
-                                )
-
-                                // Check if the stop was successful
-                                if (stopResponse.status != 204) {
-                                    echo "Failed to stop the container: ${stopResponse.content}"
-                                } else {
-                                    echo "Container stopped successfully."
-                                }
-
-                                // Remove the existing container
-                                def removeResponse = httpRequest(
-                                    url: "https://docker.kireobat.eu/api/endpoints/2/docker/containers/${containerName}",
-                                    httpMode: 'DELETE',
-                                    contentType: 'APPLICATION_JSON',
-                                    customHeaders: [[name: 'Authorization', value: "Bearer ${token}"]],
-                                    requestBody: """{
-                                        "force": true
-                                    }"""
-                                )
-
-                                // Check if the remove was successful
-                                if (removeResponse.status != 204) {
-                                    echo "Failed to remove the container: ${removeResponse.content}"
-                                } else {
-                                    echo "Container removed successfully."
-                                }
-                            } else {
-                                echo "No existing container found with the name ${containerName}. Proceeding to create a new one with a random port."
-                            }
-                        } catch (Exception e) {
-                            echo "Exception occurred: " + e.toString()
+                        if (existingContainer) {
+                            hostPort = extractHostPort(existingContainer)
+                            stopAndRemoveContainer(token, existingContainer.id)
                         }
 
-                        // Deploy the container to Portainer
-                        def deployResponse = httpRequest(
-                            url: 'https://docker.kireobat.eu/api/endpoints/2/docker/containers/create',
-                            httpMode: 'POST',
-                            contentType: 'APPLICATION_JSON',
-                            customHeaders: [[name: 'Authorization', value: "Bearer ${token}"]],
-                            requestBody: """{
-                                "Name": "${containerName}",
-                                "Image": "kireobat/oauth-api:latest",
-                                "Env": [
-                                    "SPRING_DATASOURCE_URL=${POSTGRES_URL}/${POSTGRES_USERNAME}",
-                                    "SPRING_DATASOURCE_USER=${POSTGRES_USERNAME}",
-                                    "SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}",
-                                    "GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}",
-                                    "GITHUB_SECRET=${GITHUB_SECRET}"
-                                ],
-                                "HostConfig": {
-                                    "PortBindings": {
-                                        "${hostPort ? '8080/tcp': '8080/tcp'}": [
-                                            {
-                                                "HostPort": "${hostPort ?: ''}"
-                                            }
-                                        ]
-                                    }
-                                }
-                            }"""
-                        )
+                        def containerId = createContainer(token, containerName, hostPort,
+                            POSTGRES_URL, POSTGRES_USERNAME, POSTGRES_PASSWORD,
+                            GITHUB_CLIENT_ID, GITHUB_SECRET)
 
-                        def deployResponseContent = deployResponse.content.toString()
-
-                        // Check response for success or failure
-                        if (deployResponseContent.contains("error")) {
-                            error "Failed to deploy to Portainer: ${response}"
-                        } else {
-                            echo "Successfully deployed to Portainer."
-                        }
-
-                        // Extract the container ID from the response
-                        def containerId = new groovy.json.JsonSlurper().parseText(deployResponse.content).Id
-
-                        // Start the container
-                        def startResponse = httpRequest(
-                            url: "https://docker.kireobat.eu/api/endpoints/2/docker/containers/${containerId}/start",
-                            httpMode: 'POST',
-                            contentType: 'APPLICATION_JSON',
-                            customHeaders: [[name: 'Authorization', value: "Bearer ${token}"]]
-                        )
-
-                        // Check response for success or failure
-                        if (startResponse.status != 204) {
-                            error "Failed to start the container: ${startResponse.content}"
-                        } else {
-                            echo "Container started successfully."
-                        }
+                        startContainer(token, containerId)
                     }
                 }
             }
@@ -208,4 +108,89 @@ pipeline {
             echo "Pipeline completed."
         }
     }
+
+    // Helper functions
+    def getPortainerToken(username, password) {
+        def response = httpRequest(
+            url: 'https://docker.kireobat.eu/api/auth',
+            httpMode: 'POST',
+            contentType: 'APPLICATION_JSON',
+            requestBody: """{"username": "${username}", "password": "${password}"}"""
+        )
+        return readJSON(text: response.content).jwt
+    }
+
+    def findContainerByName(token, name) {
+        def response = httpRequest(
+            url: "https://docker.kireobat.eu/api/endpoints/2/docker/containers/json",
+            httpMode: 'GET',
+            contentType: 'APPLICATION_JSON',
+            customHeaders: [[name: 'Authorization', value: "Bearer ${token}"]]
+        )
+
+        def containers = readJSON(text: response.content)
+        return containers.find { container ->
+            container.Names.any { it == "/${name}" }
+        }
+    }
+
+    def extractHostPort(container) {
+        def portBindings = container.HostConfig?.PortBindings?.'8080/tcp'
+        return portBindings ? portBindings[0].HostPort : null
+    }
+
+    def stopAndRemoveContainer(token, containerId) {
+        // Stop container
+        httpRequest(
+            url: "https://docker.kireobat.eu/api/endpoints/2/docker/containers/${containerId}/stop",
+            httpMode: 'POST',
+            contentType: 'APPLICATION_JSON',
+            customHeaders: [[name: 'Authorization', value: "Bearer ${token}"]]
+        )
+
+        // Remove container
+        httpRequest(
+            url: "https://docker.kireobat.eu/api/endpoints/2/docker/containers/${containerId}",
+            httpMode: 'DELETE',
+            contentType: 'APPLICATION_JSON',
+            customHeaders: [[name: 'Authorization', value: "Bearer ${token}"]],
+            requestBody: '{"force": true}'
+        )
+    }
+
+    def createContainer(token, name, hostPort, postgresUrl, postgresUser, postgresPass, githubClient, githubSecret) {
+        def encodedName = URLEncoder.encode(name, 'UTF-8')
+        def deployResponse = httpRequest(
+            url: "https://docker.kireobat.eu/api/endpoints/2/docker/containers/create?name=${encodedName}",
+            httpMode: 'POST',
+            contentType: 'APPLICATION_JSON',
+            customHeaders: [[name: 'Authorization', value: "Bearer ${token}"]],
+            requestBody: """{
+                "Image": "kireobat/oauth-api:latest",
+                "Env": [
+                    "SPRING_DATASOURCE_URL=${postgresUrl}/${postgresUser}",
+                    "SPRING_DATASOURCE_USER=${postgresUser}",
+                    "SPRING_DATASOURCE_PASSWORD=${postgresPass}",
+                    "GITHUB_CLIENT_ID=${githubClient}",
+                    "GITHUB_SECRET=${githubSecret}"
+                ],
+                "HostConfig": {
+                    "PortBindings": {
+                        "8080/tcp": [${hostPort ? '{"HostPort": "' + hostPort + '"}' : '{}'}]
+                    }
+                }
+            }"""
+        )
+        return readJSON(text: deployResponse.content).Id
+    }
+
+    def startContainer(token, containerId) {
+        httpRequest(
+            url: "https://docker.kireobat.eu/api/endpoints/2/docker/containers/${containerId}/start",
+            httpMode: 'POST',
+            contentType: 'APPLICATION_JSON',
+            customHeaders: [[name: 'Authorization', value: "Bearer ${token}"]]
+        )
+    }
 }
+
