@@ -89,7 +89,7 @@ pipeline {
                                 "Name": "oauth-api",
                                 "Image": "kireobat/oauth-api:latest",
                                 "Env": [
-                                    "SPRING_DATASOURCE_URL=${POSTGRES_URL}",
+                                    "SPRING_DATASOURCE_URL=${POSTGRES_URL}/${POSTGRES_USERNAME}",
                                     "SPRING_DATASOURCE_USER=${POSTGRES_USERNAME}",
                                     "SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}"
                                 ],
