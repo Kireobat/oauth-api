@@ -64,7 +64,7 @@ class SecurityConfig (
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {
         val config = CorsConfiguration().apply {
-            allowedOrigins = listOf("http://localhost:8080", "http://localhost:5173", "https://github.com")
+            allowedOrigins = listOf("http://localhost:8080", "http://localhost:5173", "https://github.com", "https://oauth-api.kireobat.eu")
             allowedMethods = listOf("*")
             allowedHeaders = listOf("*")
             allowCredentials = true
