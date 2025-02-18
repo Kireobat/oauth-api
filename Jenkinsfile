@@ -45,7 +45,12 @@ pipeline {
         }
         stage('Deploy to Portainer') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'docker', passwordVariable: 'PORTAINER_PASSWORD', usernameVariable: 'PORTAINER_USERNAME')]) {
+                withCredentials(
+                    [
+                        usernamePassword(credentialsId: 'docker', passwordVariable: 'PORTAINER_PASSWORD', usernameVariable: 'PORTAINER_USERNAME'),
+                        usernamePassword(credentialsId: 'oauth_api_postgres', passwordVariable: 'POSTGRES_PASSWORD', usernamePassword: 'POSTGRES_USERNAME'),
+                        string(credentialsId: 'postgres-url', variable: 'POSTGRES_URL')
+                    ]) {
                     script {
                         // Obtain JWT token for Portainer API
                         def response = httpRequest(
@@ -66,6 +71,11 @@ pipeline {
                             requestBody: """{
                                 "Name": "oauth-api",
                                 "Image": "kireobat/oauth-api:latest",
+                                "Env": [
+                                    "SPRING_DATASOURCE_URL: ${POSTGRES_URL}",
+                                    "SPRING_DATASOURCE_USER: ${POSTGRES_USERNAME}",
+                                    "SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}"
+                                ]
                                 "HostConfig": {
                                     "PortBindings": {
                                         "8080/tcp": [
