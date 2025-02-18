@@ -17,7 +17,7 @@ pipeline {
             steps {
                 script {
                     // Build the project to generate the JAR file in the target directory
-                    sh 'mvn clean package'
+                    sh 'mvn -Dmaven.repo.local=/tmp/.m2/repository clean package'
                 }
             }
         }
