@@ -11,7 +11,9 @@ import io.swagger.v3.oas.models.security.SecurityScheme
 import io.swagger.v3.oas.models.security.OAuthFlow
 import io.swagger.v3.oas.models.security.OAuthFlows
 import io.swagger.v3.oas.models.security.Scopes
+import io.swagger.v3.oas.models.servers.Server
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.web.filter.ForwardedHeaderFilter
 
 @Configuration
 @EnableWebMvc
@@ -24,6 +26,7 @@ class OpenApiConfig {
     fun customOpenApi(): OpenAPI {
         return OpenAPI()
             .info(Info().title("OAuth API").version("1.0"))
+            .servers(listOf(Server().url(apiPath)))
             .addSecurityItem(SecurityRequirement().addList("github"))
             .components(
                 Components()
@@ -44,5 +47,10 @@ class OpenApiConfig {
                     )
                 )
             )
+    }
+
+    @Bean
+    fun forwardedHeaderFilter(): ForwardedHeaderFilter {
+        return ForwardedHeaderFilter()
     }
 }
