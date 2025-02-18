@@ -74,10 +74,11 @@ pipeline {
                                 }"""
                         )
 
-                        echo "Auth Response: ${response.content}"
-                        echo "Auth Status: ${response.status}"
-
                         def token = readJSON(text: response.content).jwt
+
+
+                        echo "url: ${POSTGRES_URL}"
+                        echo "username: ${POSTGRES_USERNAME}"
 
                         // Deploy the container to Portainer
                         def deployResponse = httpRequest(
