@@ -9,6 +9,5 @@ FROM eclipse-temurin:21-jre-alpine-3.21
 WORKDIR application
 COPY --from=builder application/dependencies/ ./
 COPY --from=builder application/spring-boot-loader/ ./
-COPY --from=builder application/company-dependencies/ ./
 COPY --from=builder application/application/ ./
 ENTRYPOINT exec java org.springframework.boot.loader.launch.JarLauncher $JETTY_DEBUG -Xmx512M -Doracle.jdbc.J2EE13Compliant=true -Djava.security.egd=file:/dev/./urandom
