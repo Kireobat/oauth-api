@@ -76,10 +76,6 @@ pipeline {
 
                         def token = readJSON(text: response.content).jwt
 
-
-                        echo "url: ${POSTGRES_URL}"
-                        echo "username: ${POSTGRES_USERNAME}"
-
                         // Deploy the container to Portainer
                         def deployResponse = httpRequest(
                             url: 'https://docker.kireobat.eu/api/endpoints/2/docker/containers/create',
