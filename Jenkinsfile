@@ -17,6 +17,14 @@ pipeline {
                 }
             }
         }
+        stage('Build') {
+            steps {
+                script {
+                    // Build the project to generate the JAR file in the target directory
+                    sh 'mvn clean package'
+                }
+            }
+        }
         stage('Build and Push Docker Image') {
             steps {
                 script {
