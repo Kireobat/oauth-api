@@ -68,7 +68,7 @@ pipeline {
                             url: 'https://docker.kireobat.eu/api/auth',
                             httpMode: 'POST',
                             contentType: 'APPLICATION_JSON',
-                            requestBody: """{'username': '$PORTAINER_USERNAME', 'password': '$PORTAINER_PASSWORD'}"""
+                            requestBody: '''{'username': '${PORTAINER_USERNAME}', 'password': '${PORTAINER_PASSWORD}'}'''
                         )
 
                         def token = readJSON(text: response.content).jwt
@@ -79,13 +79,13 @@ pipeline {
                             httpMode: 'POST',
                             contentType: 'APPLICATION_JSON',
                             customHeaders: [[name: 'Authorization', value: 'Bearer ${token}']],
-                            requestBody: """{
+                            requestBody: '''{
                                 'Name': 'oauth-api',
                                 'Image': 'kireobat/oauth-api:latest',
                                 'Env': [
-                                    'SPRING_DATASOURCE_URL: $POSTGRES_URL',
-                                    'SPRING_DATASOURCE_USER: $POSTGRES_USERNAME',
-                                    'SPRING_DATASOURCE_PASSWORD: $POSTGRES_PASSWORD'
+                                    'SPRING_DATASOURCE_URL: ${POSTGRES_URL}',
+                                    'SPRING_DATASOURCE_USER: ${POSTGRES_USERNAME}',
+                                    'SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}'
                                 ]
                                 'HostConfig': {
                                     'PortBindings': {
@@ -96,7 +96,7 @@ pipeline {
                                         ]
                                     }
                                 }
-                                }"""
+                                }'''
                         )
 
                         def deployResponseContent = deployResponse.content.toString()
