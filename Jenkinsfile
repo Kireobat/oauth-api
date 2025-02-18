@@ -57,6 +57,11 @@ pipeline {
                             passwordVariable: 'POSTGRES_PASSWORD',
                             usernameVariable: 'POSTGRES_USERNAME'
                         ),
+                        usernamePassword(
+                            credentialsId: 'github_oauth_app',
+                            passwordVariable: 'GITHUB_SECRET',
+                            usernameVariable: 'GITHUB_CLIENT_ID'
+                        ),
                         string(
                             credentialsId: 'postgres_url',
                             variable: 'POSTGRES_URL'
@@ -88,7 +93,9 @@ pipeline {
                                 "Env": [
                                     "SPRING_DATASOURCE_URL=${POSTGRES_URL}/${POSTGRES_USERNAME}",
                                     "SPRING_DATASOURCE_USER=${POSTGRES_USERNAME}",
-                                    "SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}"
+                                    "SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}",
+                                    "GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}",
+                                    "GITHUB_SECRET=${GITHUB_SECRET}"
                                 ],
                                 "HostConfig": {
                                     "PortBindings": {
