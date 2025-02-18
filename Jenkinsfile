@@ -153,18 +153,7 @@ pipeline {
                             )
                         }
 
-                        // Obtain JWT token for Portainer API
-                        def response = httpRequest(
-                            url: 'https://docker.kireobat.eu/api/auth',
-                            httpMode: 'POST',
-                            contentType: 'APPLICATION_JSON',
-                            requestBody: """{
-                                "username": "${PORTAINER_USERNAME}",
-                                "password": "${PORTAINER_PASSWORD}"
-                                }"""
-                        )
-
-                        def token = readJSON(text: response.content).jwt
+                        def token = getPortainerToken(POSTGRES_USERNAME,POSTGRES_PASSWORD)
 
                         // Define the container name
                         def containerName = "oauth-api"
