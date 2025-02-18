@@ -47,9 +47,20 @@ pipeline {
             steps {
                 withCredentials(
                     [
-                        usernamePassword(credentialsId: 'docker', passwordVariable: 'PORTAINER_PASSWORD', usernameVariable: 'PORTAINER_USERNAME'),
-                        usernamePassword(credentialsId: 'oauth_api_postgres', passwordVariable: 'POSTGRES_PASSWORD', usernamePassword: 'POSTGRES_USERNAME'),
-                        string(credentialsId: 'postgres_url', variable: 'POSTGRES_URL')
+                        usernamePassword(
+                            credentialsId: 'docker',
+                            passwordVariable: 'PORTAINER_PASSWORD',
+                            usernameVariable: 'PORTAINER_USERNAME'
+                        ),
+                        usernamePassword(
+                            credentialsId: 'oauth_api_postgres',
+                            passwordVariable: 'POSTGRES_PASSWORD',
+                            usernameVariable: 'POSTGRES_USERNAME'
+                        ),
+                        string(
+                            credentialsId: 'postgres_url',
+                            variable: 'POSTGRES_URL'
+                        )
                     ]) {
                     script {
                         // Obtain JWT token for Portainer API
