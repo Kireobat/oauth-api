@@ -1,8 +1,8 @@
 pipeline {
-    agent {
-        docker {
-            image 'maven:3.9.9-eclipse-temurin-21-alpine'
-        }
+    agent any
+    tools {
+        jdk 'temurin-jdk21'
+        maven 'maven3'
     }
     stages {
         stage('Checkout') {
@@ -14,6 +14,11 @@ pipeline {
             }
         }
         stage('Build') {
+            agent {
+                docker {
+                    image 'maven:3.9.9-eclipse-temurin-21-alpine'
+                }
+            }
             steps {
                 script {
                     // Build the project to generate the JAR file in the target directory
@@ -22,6 +27,11 @@ pipeline {
             }
         }
         stage('Build and Push Docker Image') {
+            agent {
+                docker {
+                    image 'docker:20.10'
+                }
+            }
             steps {
                 script {
                     // Build and push the Docker image
