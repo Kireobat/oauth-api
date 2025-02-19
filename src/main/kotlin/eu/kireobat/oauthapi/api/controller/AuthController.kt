@@ -22,8 +22,4 @@ class AuthController(private val userService: UserService) {
         }
         return ResponseEntity.ok(userService.registerOrUpdateUser(authentication.principal as OAuth2User))
     }
-    @GetMapping("/user/{username}")
-    fun getUserByUsername(@PathVariable username: String): ResponseEntity<UserDto> {
-        return ResponseEntity.ok(userService.getUserByUsername(username))
-    }
 }

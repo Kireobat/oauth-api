@@ -12,7 +12,7 @@ data class TopicEntity (
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "topicsSeq")
     @SequenceGenerator(name = "topicsSeq", sequenceName = "topics_seq", allocationSize = 1)
     @Column(name="id")
-    val id: Number = 0,
+    val id: Int = 0,
     @Column(name="title")
     var title: String = "",
     @Column(name="description")

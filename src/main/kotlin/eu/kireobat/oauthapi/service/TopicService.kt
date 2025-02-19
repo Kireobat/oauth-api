@@ -5,6 +5,7 @@ import eu.kireobat.oauthapi.api.dto.CreateBlogDto
 import eu.kireobat.oauthapi.api.dto.OAuthApiPageDto
 import eu.kireobat.oauthapi.api.dto.TopicDto
 import eu.kireobat.oauthapi.persistence.entity.BlogEntity
+import eu.kireobat.oauthapi.persistence.entity.TopicEntity
 import eu.kireobat.oauthapi.persistence.repo.BlogRepo
 import eu.kireobat.oauthapi.persistence.repo.TopicRepo
 import org.springframework.data.domain.Pageable
@@ -13,6 +14,7 @@ import org.springframework.security.oauth2.core.user.OAuth2User
 import org.springframework.stereotype.Service
 import org.springframework.web.server.ResponseStatusException
 import java.time.ZonedDateTime
+import java.util.*
 import kotlin.jvm.optionals.getOrElse
 
 @Service
@@ -26,6 +28,9 @@ class TopicService(
             pageable.pageNumber,
             pageable.pageSize
         )
+    }
 
+    fun getTopic(id: Number): Optional<TopicEntity> {
+        return topicRepo.findById(id.toString())
     }
 }

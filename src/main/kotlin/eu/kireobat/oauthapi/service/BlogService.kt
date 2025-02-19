@@ -17,17 +17,25 @@ import kotlin.jvm.optionals.getOrElse
 @Service
 class BlogService(
     private val blogRepo: BlogRepo,
-    private val userService: UserService
+    private val userService: UserService,
+    private val topicService: TopicService
 ) {
 
     fun createBlog(oAuth2User: OAuth2User, createBlogDto: CreateBlogDto): BlogDto {
 
         val user = userService.registerOrUpdateUser(oAuth2User)
 
+        val topicEntity = if (createBlogDto.topicId != null) {
+            topicService.getTopic(createBlogDto.topicId).getOrElse { throw ResponseStatusException(HttpStatus.NOT_FOUND, "Topic not found") }
+        } else {
+            null
+        }
+
         return blogRepo.save(BlogEntity(
             createdBy = user.toUserEntity(),
             title = createBlogDto.title,
             description = createBlogDto.description,
+            topic = topicEntity
         )).toBlogDto()
     }
 

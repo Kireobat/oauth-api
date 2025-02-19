@@ -35,6 +35,10 @@ class ReactionService(
 
         val user = userService.registerOrUpdateUser(oAuth2User)
 
+        if (reactionRepo.existsByUserIdAndBlogIdAndReaction(user.id, createReactionDto.blogId, createReactionDto.reaction)) {
+            throw ResponseStatusException(HttpStatus.CONFLICT, "Duplicate reaction")
+        }
+
         val blog = blogService.getBlogById(createReactionDto.blogId)
 
         return reactionRepo.save(ReactionEntity(
