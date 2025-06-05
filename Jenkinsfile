@@ -18,11 +18,6 @@ pipeline {
             }
         }
         stage('Build and Push Docker Image') {
-            agent {
-                docker {
-                    image 'docker:20.10'
-                }
-            }
             steps {
                 script {
                     // Build and push the Docker image
